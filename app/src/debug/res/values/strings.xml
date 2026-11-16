@@ -1,0 +1,4 @@
+<resources>
+    <!-- Test builds are a separate app, named so it's clear which is which. -->
+    <string name="app_name">Project Me (dev)</string>
+</resources>

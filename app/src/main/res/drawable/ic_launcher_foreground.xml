@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The app icon: a stopwatch (timing runs and workouts) with a dumbbell inside whose handle is a
+     heartbeat line, for lifting and cardio together. Drawn on Android's 108dp icon grid, inside
+     the middle 66dp that every icon shape keeps. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Everything is moved up 1.5, so the ring sits just below the icon's centre and the ring and
+         crown together look balanced. It is then shrunk slightly about the centre, so the crown stays inside the visible shape. -->
+    <group
+        android:pivotX="54"
+        android:pivotY="54"
+        android:scaleX="0.9"
+        android:scaleY="0.9">
+    <group android:translateY="-1.5">
+
+        <!-- The stopwatch: its ring, the crown on top, and the button at the side. -->
+        <path
+            android:strokeColor="#D0BCFF"
+            android:strokeWidth="5"
+            android:fillColor="#00000000"
+            android:pathData="M54,31 a26,26 0 1 1 0,52 a26,26 0 1 1 0,-52 z" />
+        <path
+            android:fillColor="#D0BCFF"
+            android:pathData="M51,21 h6 a2,2 0 0 1 2,2 v2 a2,2 0 0 1 -2,2 h-6 a2,2 0 0 1 -2,-2 v-2 a2,2 0 0 1 2,-2 z M51.5,26 h5 v5 h-5 z" />
+        <group
+            android:pivotX="75"
+            android:pivotY="36"
+            android:rotation="45">
+            <path
+                android:fillColor="#D0BCFF"
+                android:pathData="M73,33 h4 a1.5,1.5 0 0 1 1.5,1.5 v3 a1.5,1.5 0 0 1 -1.5,1.5 h-4 a1.5,1.5 0 0 1 -1.5,-1.5 v-3 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+        </group>
+
+        <!-- Inside: the dumbbell with a heartbeat handle, shrunk to fit and centred in the ring. -->
+        <group
+            android:pivotX="54"
+            android:pivotY="54"
+            android:scaleX="0.66"
+            android:scaleY="0.66"
+            android:translateY="3">
+            <path
+                android:fillColor="#D0BCFF"
+                android:pathData="M21.5,51.5h5.5v5h-5.5z M81,51.5h5.5v5h-5.5z" />
+            <path
+                android:fillColor="#D0BCFF"
+                android:pathData="M28.5,41 h3 a1.5,1.5 0 0 1 1.5,1.5 v23 a1.5,1.5 0 0 1 -1.5,1.5 h-3 a1.5,1.5 0 0 1 -1.5,-1.5 v-23 a1.5,1.5 0 0 1 1.5,-1.5 z
+                                  M76.5,41 h3 a1.5,1.5 0 0 1 1.5,1.5 v23 a1.5,1.5 0 0 1 -1.5,1.5 h-3 a1.5,1.5 0 0 1 -1.5,-1.5 v-23 a1.5,1.5 0 0 1 1.5,-1.5 z
+                                  M35.5,34 h3 a1.5,1.5 0 0 1 1.5,1.5 v37 a1.5,1.5 0 0 1 -1.5,1.5 h-3 a1.5,1.5 0 0 1 -1.5,-1.5 v-37 a1.5,1.5 0 0 1 1.5,-1.5 z
+                                  M69.5,34 h3 a1.5,1.5 0 0 1 1.5,1.5 v37 a1.5,1.5 0 0 1 -1.5,1.5 h-3 a1.5,1.5 0 0 1 -1.5,-1.5 v-37 a1.5,1.5 0 0 1 1.5,-1.5 z" />
+            <path
+                android:strokeColor="#D0BCFF"
+                android:strokeWidth="5"
+                android:strokeLineCap="round"
+                android:strokeLineJoin="round"
+                android:fillColor="#00000000"
+                android:pathData="M40,54 H45.5 L49,43 L53.5,65 L57.5,47 L60,54 H68" />
+        </group>
+
+    </group>
+    </group>
+</vector>
