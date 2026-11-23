@@ -250,9 +250,25 @@ object ExerciseLibrary {
     // With nothing typed: the exercises done most recently, then the most often (leaving out any
     // already under Recent), then every exercise. With a search: the matches, with ones the user
     // has done first (most often done first), then the rest in the usual order.
-    fun pickerSections(query: String, history: List<ExerciseSummary>): List<Pair<String?, List<LibraryExercise>>> {
+    // Exercises already in the workout (alreadyAdded) are kept out of all that and listed last,
+    // under "Already added", so they don't take up room but a search still finds them.
+    fun pickerSections(
+        query: String,
+        history: List<ExerciseSummary>,
+        alreadyAdded: Set<String> = emptySet()
+    ): List<Pair<String?, List<LibraryExercise>>> {
+        val sections = pickerSectionsLeavingOut(query, history, alreadyAdded)
+        val added = search(query).filter { it.name in alreadyAdded }
+        return if (added.isEmpty()) sections else sections + ("Already added" to added)
+    }
+
+    private fun pickerSectionsLeavingOut(
+        query: String,
+        history: List<ExerciseSummary>,
+        leaveOut: Set<String>
+    ): List<Pair<String?, List<LibraryExercise>>> {
         val byName = all.associateBy { it.name }
-        val done = history.filter { it.name in byName }
+        val done = history.filter { it.name in byName && it.name !in leaveOut }
         if (query.isBlank()) {
             val recent = done.sortedByDescending { it.lastTime }.take(SHORTLIST_SIZE).map { it.name }
             val frequent = done.filter { it.name !in recent }
@@ -261,12 +277,12 @@ object ExerciseLibrary {
             return listOf(
                 "Recent" to recent.map(byName::getValue),
                 "Frequent" to frequent.map(byName::getValue),
-                "All Exercises" to all
+                "All Exercises" to all.filter { it.name !in leaveOut }
             ).filter { it.second.isNotEmpty() }
         }
         val timesDone = done.associate { it.name to it.workouts }
         // sortedBy keeps search's own order among exercises done the same number of times.
-        val results = search(query).sortedByDescending { timesDone[it.name] ?: 0 }
+        val results = search(query).filter { it.name !in leaveOut }.sortedByDescending { timesDone[it.name] ?: 0 }
         return listOf<Pair<String?, List<LibraryExercise>>>(null to results).filter { it.second.isNotEmpty() }
     }
 

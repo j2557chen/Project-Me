@@ -48,4 +48,34 @@ class PickerSectionsTest {
     fun noMatchesGivesNoSections() {
         assertEquals(emptyList<Pair<String?, List<LibraryExercise>>>(), ExerciseLibrary.pickerSections("zzqx", history))
     }
+
+    @Test
+    fun addedExercisesGoLastAndOutOfTheShortlists() {
+        val added = setOf("Push Up", "Bench Press (Barbell)")
+        val sections = ExerciseLibrary.pickerSections("", history, added)
+        // The four other exercises done all fit under Recent, so there's no Frequent this time.
+        assertEquals(listOf("Recent", "All Exercises", "Already added"), sections.map { it.first })
+        assertEquals(
+            listOf("Squat (Barbell)", "Deadlift (Barbell)", "Pull Up", "Lat Pulldown (Cable)"),
+            names(sections[0])
+        )
+        assertEquals(emptyList<String>(), names(sections[1]).filter { it in added })
+        assertEquals(ExerciseLibrary.all.size - 2, sections[1].second.size)
+        assertEquals(listOf("Bench Press (Barbell)", "Push Up"), names(sections[2]))
+    }
+
+    @Test
+    fun aSearchStillFindsAddedExercisesAtTheEnd() {
+        val sections = ExerciseLibrary.pickerSections("bench press", history, setOf("Bench Press (Barbell)"))
+        assertEquals(listOf(null, "Already added"), sections.map { it.first })
+        assertEquals(false, "Bench Press (Barbell)" in names(sections[0]))
+        assertEquals(listOf("Bench Press (Barbell)"), names(sections[1]))
+    }
+
+    @Test
+    fun onlyAddedMatchesStillShowUnderTheirHeading() {
+        val sections = ExerciseLibrary.pickerSections("push up", history, setOf("Push Up"))
+        assertEquals("Already added", sections.last().first)
+        assertEquals(listOf("Push Up"), names(sections.last()).filter { it == "Push Up" })
+    }
 }

@@ -368,7 +368,8 @@ fun ProgramEditorScreen(
                     } else null,
                     onUnlinkAbove = if (isLinkedAbove(groups, index)) {
                         { applyGroups(toggleSupersetWithNext(groups, keys, index - 1)) }
-                    } else null
+                    } else null,
+                    otherNames = exercises.map { it.name }.toSet()
                 )
             }
             // At the end of the list, the same Add Exercise button as on a workout.
@@ -451,7 +452,9 @@ private fun ProgramExerciseCard(
     supersetColor: Color? = null,
     linkedBelow: Boolean = false,
     onToggleLink: (() -> Unit)? = null,
-    onUnlinkAbove: (() -> Unit)? = null
+    onUnlinkAbove: (() -> Unit)? = null,
+    // The names already in the program, which can't be picked as a substitute.
+    otherNames: Set<String> = emptySet()
 ) {
     Card(
         shape = RoundedCornerShape(12.dp),
@@ -513,6 +516,7 @@ private fun ProgramExerciseCard(
             // The ⋮ menu, as on a workout's cards: superset, and Remove (which asks first, so an
             // exercise isn't removed by a stray tap).
             var confirmRemove by remember { mutableStateOf(false) }
+            var substituting by remember { mutableStateOf(false) }
             ExerciseMenu(
                 linkedBelow = linkedBelow,
                 onToggleLink = onToggleLink,
@@ -520,8 +524,22 @@ private fun ProgramExerciseCard(
                 onReorder = null,
                 onDelete = { confirmRemove = true },
                 deleteLabel = "Remove exercise",
+                onSubstitute = { substituting = true },
                 modifier = Modifier.align(Alignment.TopEnd)
             )
+            // In a program the planned sets and reps carry straight over: only the name changes,
+            // and the note, which was about the old exercise.
+            if (substituting) {
+                SubstituteDialog(
+                    exerciseName = exercise.name,
+                    alreadyAdded = otherNames,
+                    onDismiss = { substituting = false },
+                    onPick = { picked ->
+                        substituting = false
+                        onChange(exercise.copy(name = picked.name, type = picked.type, notes = null))
+                    }
+                )
+            }
             if (confirmRemove) {
                 ConfirmDestructiveDialog(
                     title = "Remove ${exercise.name}?",

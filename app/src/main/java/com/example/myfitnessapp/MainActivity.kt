@@ -687,7 +687,8 @@ fun WorkoutScreen(activeWorkout: Workout?, modifier: Modifier = Modifier) {
                             onReorder = { showReorderDialog = true },
                             highlightIncomplete = highlightIncomplete,
                             undoHost = undoHost,
-                            restTimer = true
+                            restTimer = true,
+                            substitute = true
                         )
                         // A new workout with nothing in it yet says what to do next.
                         if (exercisesLoaded && exercises.isEmpty()) {
@@ -912,7 +913,9 @@ fun ExercisePickerDialog(
 
     // Recalculated as the user types, when their history loads, or when they make an exercise.
     val custom = ExerciseLibrary.custom
-    val sections = remember(query, history, custom) { history?.let { ExerciseLibrary.pickerSections(query, it) } }
+    val sections = remember(query, history, custom, alreadyAdded) {
+        history?.let { ExerciseLibrary.pickerSections(query, it, alreadyAdded) }
+    }
     val noResults = sections?.isEmpty() == true
     // The pop-up for making a new exercise, started with what was typed.
     var creating by remember { mutableStateOf(false) }
@@ -1026,13 +1029,11 @@ fun ExercisePickerDialog(
                                     .padding(horizontal = 8.dp, vertical = 8.dp)
                             ) {
                                 Text(text = exercise.name, fontSize = AppText.body)
+                                // Added ones sit under their own "Already added" heading, so they
+                                // keep the usual details, faded.
                                 Text(
-                                    text = if (added) {
-                                        "Already added"
-                                    } else {
-                                        "${exercise.group} · ${exercise.type.displayName()}" +
-                                                if (exercise.custom) " · Custom" else ""
-                                    },
+                                    text = "${exercise.group} · ${exercise.type.displayName()}" +
+                                            if (exercise.custom) " · Custom" else "",
                                     fontSize = AppText.caption,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -1122,7 +1123,9 @@ fun ExerciseCard(
     // This exercise's rest length in seconds, or null for no rest timer.
     restSeconds: Int? = null,
     // Sets or clears the rest length. Null hides the rest timer button.
-    onPickRest: ((Int?) -> Unit)? = null
+    onPickRest: ((Int?) -> Unit)? = null,
+    // Opens the Substitute list. Null leaves Substitute out of the ⋮ menu.
+    onSubstitute: (() -> Unit)? = null
 ) {
     val cardShape = RoundedCornerShape(12.dp)
 
@@ -1253,6 +1256,7 @@ fun ExerciseCard(
                 onUnlinkAbove = onUnlinkAbove,
                 onReorder = onReorder,
                 onDelete = onDelete,
+                onSubstitute = onSubstitute,
                 modifier = Modifier.align(Alignment.TopEnd)
             )
 
@@ -1513,8 +1517,8 @@ private fun SwipeToDeleteSet(setName: String, onDelete: () -> Unit, content: @Co
 
 // The note under an exercise's name. Empty, it shows a faint "Leave a note...". It's saved as
 // it's typed, and scrolls itself above the keyboard.
-// The ⋮ button in an exercise card's corner, and its menu: linking the exercise into a superset
-// or out of one, moving it, and deleting it. Only what applies is listed: there's nothing to
+// The ⋮ button in an exercise card's corner, and its menu: substituting another exercise for it,
+// linking it into a superset or out of one, moving it, and deleting it. Only what applies is listed: there's nothing to
 // link with below the last exercise, and Move is left out where exercises can't be rearranged.
 // Used on workouts and in the program editor, where deleting is called removing.
 @Composable
@@ -1525,7 +1529,9 @@ fun ExerciseMenu(
     onReorder: (() -> Unit)?,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier,
-    deleteLabel: String = "Delete exercise"
+    deleteLabel: String = "Delete exercise",
+    // Opens the list of exercises that can take its place. Null leaves it out of the menu.
+    onSubstitute: (() -> Unit)? = null
 ) {
     var open by remember { mutableStateOf(false) }
     // Runs a menu choice, closing the menu first.
@@ -1540,6 +1546,13 @@ fun ExerciseMenu(
             contentDescription = "Exercise options"
         )
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            if (onSubstitute != null) {
+                DropdownMenuItem(
+                    text = { Text("Substitute") },
+                    leadingIcon = { SwapArrowsIcon(modifier = Modifier.size(18.dp)) },
+                    onClick = { choose(onSubstitute) }
+                )
+            }
             if (onToggleLink != null) {
                 DropdownMenuItem(
                     text = { Text(if (linkedBelow) "Unlink from exercise below" else "Superset with exercise below") },

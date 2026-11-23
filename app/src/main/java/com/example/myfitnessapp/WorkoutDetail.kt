@@ -182,7 +182,10 @@ fun LazyListScope.exerciseItems(
     undoHost: UndoHost? = null,
     // Shows each strength exercise's rest timer button, and starts its countdown when a set is
     // ticked off. Only for the running workout.
-    restTimer: Boolean = false
+    restTimer: Boolean = false,
+    // Offers Substitute in each exercise's ⋮ menu. Only for the running workout: a past workout
+    // records what was actually done.
+    substitute: Boolean = false
 ) {
     val dao = db.workoutDao()
     val setsByExercise = sets.groupBy { it.exerciseId }
@@ -210,6 +213,8 @@ fun LazyListScope.exerciseItems(
         val prBadges = rememberPrBadges(dao, exercise)
         // Whether the "Delete this exercise?" pop-up is open.
         var confirmDelete by remember(exercise.id) { mutableStateOf(false) }
+        // Whether the Substitute list is open.
+        var substituting by remember(exercise.id) { mutableStateOf(false) }
 
         ExerciseCard(
             exercise = exercise,
@@ -261,8 +266,31 @@ fun LazyListScope.exerciseItems(
             restSeconds = RestTimer.lengths[exercise.id],
             onPickRest = if (restTimer && exercise.type == ActivityType.STRENGTH) {
                 { seconds -> RestTimer.setLength(context, exercise.id, seconds) }
+            } else null,
+            // A recording's numbers came from the GPS, so it stays what it was.
+            onSubstitute = if (substitute && !exercise.isRecorded) {
+                { substituting = true }
             } else null
         )
+
+        if (substituting) {
+            SubstituteDialog(
+                exerciseName = exercise.name,
+                alreadyAdded = exercises.map { it.name }.toSet(),
+                onDismiss = { substituting = false },
+                onPick = { picked ->
+                    substituting = false
+                    scope.launch {
+                        val swap = substituteExercise(db, exercise, picked)
+                        // The rest timer carries across to whichever exercise now has the sets to do.
+                        if (swap.newExerciseId != exercise.id) {
+                            RestTimer.lengths[exercise.id]?.let { RestTimer.setLength(context, swap.newExerciseId, it) }
+                        }
+                        undoHost?.offer("Swapped ${exercise.name} for ${picked.name}", swap.undo)
+                    }
+                }
+            )
+        }
 
         if (confirmDelete) {
             ConfirmDestructiveDialog(
