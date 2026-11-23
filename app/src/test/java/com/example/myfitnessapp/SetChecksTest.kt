@@ -91,4 +91,45 @@ class SetChecksTest {
         )
         assertFalse(incompleteSets(exercises, sets).onlyUnticked)
     }
+
+    // ----- Empty workouts -----
+
+    @Test
+    fun aWorkoutWithNoExercisesHasNothingToSave() {
+        assertFalse(hasAnythingToSave(emptyList(), emptyList()))
+    }
+
+    @Test
+    fun emptySetsAndBlankActivitiesHaveNothingToSave() {
+        val exercises = listOf(
+            exercise(1, "Bench Press (Barbell)"),
+            exercise(2, "Squat (Barbell)"),            // no sets at all
+            exercise(3, "Running", ActivityType.RUN).copy(notes = "  ")
+        )
+        val sets = listOf(ExerciseSet(id = 10, exerciseId = 1, setNumber = 1))
+        assertFalse(hasAnythingToSave(exercises, sets))
+    }
+
+    @Test
+    fun oneFilledInSetIsEnough() {
+        val exercises = listOf(exercise(1, "Pull Up"))
+        assertTrue(hasAnythingToSave(exercises, listOf(ExerciseSet(id = 10, exerciseId = 1, setNumber = 1, reps = 8.0))))
+        assertTrue(hasAnythingToSave(exercises, listOf(ExerciseSet(id = 10, exerciseId = 1, setNumber = 1, weight = 20.0))))
+    }
+
+    @Test
+    fun activitiesCountWithAnyDetailOrWhenRecorded() {
+        assertTrue(hasAnythingToSave(listOf(exercise(1, "Running", ActivityType.RUN).copy(distance = 5.0)), emptyList()))
+        assertTrue(hasAnythingToSave(listOf(exercise(1, "Rowing Machine", ActivityType.CARDIO).copy(durationSeconds = 600)), emptyList()))
+        assertTrue(hasAnythingToSave(listOf(exercise(1, "Yoga", ActivityType.OTHER).copy(notes = "Felt loose")), emptyList()))
+        assertTrue(hasAnythingToSave(listOf(exercise(1, "Run", ActivityType.RUN).copy(isRecorded = true)), emptyList()))
+    }
+
+    @Test
+    fun removingTheOnlyFilledInSetsLeavesNothing() {
+        val exercises = listOf(exercise(1, "Bench Press (Barbell)"))
+        val filled = ExerciseSet(id = 10, exerciseId = 1, setNumber = 1, weight = 60.0)
+        assertTrue(hasAnythingToSave(exercises, listOf(filled)))
+        assertFalse(hasAnythingToSave(exercises, listOf(filled), removeSets = listOf(filled)))
+    }
 }

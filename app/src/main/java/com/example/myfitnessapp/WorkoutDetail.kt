@@ -104,14 +104,19 @@ suspend fun reorderExercises(db: WorkoutDatabase, orderedIds: List<Long>) {
 // Unfinished sets can be ticked off first (tickSetIds), or removed (removeSets), along with any
 // exercise that leaves with no sets.
 // Everything happens in one transaction, so it either all happens or none of it does.
+// A workout that would be left with nothing in it isn't saved: nothing changes, and it returns
+// false.
 suspend fun finishWorkout(
     db: WorkoutDatabase,
     workoutId: Long,
     tickSetIds: List<Long> = emptyList(),
     removeSets: List<ExerciseSet> = emptyList()
-) {
+): Boolean {
     val dao = db.workoutDao()
-    db.withTransaction {
+    return db.withTransaction {
+        if (!hasAnythingToSave(dao.getExercisesForWorkout(workoutId), dao.getSetsForWorkout(workoutId), removeSets)) {
+            return@withTransaction false
+        }
         if (tickSetIds.isNotEmpty()) dao.markSetsDone(tickSetIds)
         if (removeSets.isNotEmpty()) {
             dao.deleteSets(removeSets.map { it.id })
@@ -139,6 +144,7 @@ suspend fun finishWorkout(
         dao.endWorkout(workoutId, System.currentTimeMillis())
         // Run, cardio, and other exercises with nothing filled in are removed too.
         dao.deleteEmptyOtherExercises(workoutId)
+        true
     }
 }
 

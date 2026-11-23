@@ -76,3 +76,22 @@ fun incompleteSets(exercises: List<Exercise>, sets: List<ExerciseSet>): Incomple
         }
     )
 }
+
+// Whether a workout would have anything in it once saved, counting only what saving keeps: a
+// strength set with a weight or reps, a recorded activity, or a run or cardio with a distance,
+// duration or note. A workout with none of these isn't saved.
+// removeSets are sets the save is about to remove, as for finishWorkout.
+fun hasAnythingToSave(
+    exercises: List<Exercise>,
+    sets: List<ExerciseSet>,
+    removeSets: List<ExerciseSet> = emptyList()
+): Boolean {
+    val removed = removeSets.map { it.id }.toSet()
+    val kept = sets.filter { it.id !in removed && (it.weight != null || it.reps != null) }
+        .map { it.exerciseId }.toSet()
+    return exercises.any { exercise ->
+        if (exercise.type == ActivityType.STRENGTH) exercise.id in kept
+        else exercise.isRecorded || exercise.distance != null || exercise.durationSeconds != null ||
+            !exercise.notes.isNullOrBlank()
+    }
+}

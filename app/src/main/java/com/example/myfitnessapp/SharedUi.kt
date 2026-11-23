@@ -517,7 +517,8 @@ fun ConfirmDestructiveDialog(
     message: String,
     confirmLabel: String,
     onConfirm: () -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    dismissLabel: String = "Cancel"
 ) {
     BasicAlertDialog(onDismissRequest = onDismiss) {
         Surface(
@@ -542,7 +543,7 @@ fun ConfirmDestructiveDialog(
                 Spacer(modifier = Modifier.height(8.dp))
                 // Cancel in the bottom left corner, the delete button in the bottom right.
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    TextButton(onClick = onDismiss) { Text("Cancel") }
+                    TextButton(onClick = onDismiss) { Text(dismissLabel) }
                     TextButton(onClick = onConfirm) {
                         Text(confirmLabel, color = MaterialTheme.colorScheme.error)
                     }

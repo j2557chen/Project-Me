@@ -482,6 +482,8 @@ fun WorkoutScreen(activeWorkout: Workout?, modifier: Modifier = Modifier) {
     var showReorderDialog by remember { mutableStateOf(false) }
     var showProgramPicker by remember { mutableStateOf(false) }
     var showDiscardWorkoutDialog by remember { mutableStateOf(false) }
+    // Shown when Finish is pressed on a workout with nothing in it to save.
+    var showNothingToSave by remember { mutableStateOf(false) }
     // After a save is stopped by incomplete sets: their empty boxes are outlined in red until
     // filled in, and the pop-up lists them with ways on (null once it's closed).
     var highlightIncomplete by remember(shown?.id) { mutableStateOf(false) }
@@ -524,11 +526,20 @@ fun WorkoutScreen(activeWorkout: Workout?, modifier: Modifier = Modifier) {
 
     // Saves the workout, after ticking off or removing any sets given.
     fun saveWorkout(workout: Workout, tickSetIds: List<Long> = emptyList(), removeSets: List<ExerciseSet> = emptyList()) {
+        // An empty workout isn't saved; the pop-up offers to discard it or keep going.
+        if (!hasAnythingToSave(exercises, sets, removeSets)) {
+            showNothingToSave = true
+            return
+        }
         // Nothing deleted can come back once the workout is saved, and the rest timers end with it.
         undoHost.dismiss()
         RestTimer.clearAll(context)
         scope.launch {
-            finishWorkout(db, workout.id, tickSetIds, removeSets)
+            // The same check again as it saves, in case anything changed in between.
+            if (!finishWorkout(db, workout.id, tickSetIds, removeSets)) {
+                showNothingToSave = true
+                return@launch
+            }
             // The new workout goes into the backup folder shortly.
             AutoBackup.backupSoon(context)
             // Only now, with the workout saved, is it checked for new records.
@@ -542,6 +553,11 @@ fun WorkoutScreen(activeWorkout: Workout?, modifier: Modifier = Modifier) {
     // Used by both Finish and Finish Workout. An unchecked or incomplete set stops the save: what
     // needs filling in turns red, and a pop-up offers to tick or remove those sets instead.
     fun trySaveWorkout(workout: Workout) {
+        // A workout with nothing in it is caught first, rather than asking about its empty sets.
+        if (!hasAnythingToSave(exercises, sets)) {
+            showNothingToSave = true
+            return
+        }
         val incomplete = incompleteSets(exercises, sets)
         if (incomplete.byExercise.isEmpty()) {
             saveWorkout(workout)
@@ -819,6 +835,22 @@ fun WorkoutScreen(activeWorkout: Workout?, modifier: Modifier = Modifier) {
                     shown?.let { saveWorkout(it, removeSets = incomplete.byExercise.flatMap { (_, sets) -> sets }) }
                 },
                 onGoBack = { unfinished = null }
+            )
+        }
+
+        // Finish on a workout with nothing in it: it isn't saved. Discard it, or go back to it.
+        if (showNothingToSave && shown != null) {
+            ConfirmDestructiveDialog(
+                title = "Nothing to save",
+                message = "This workout has no sets or activities filled in yet. Add some, or discard it.",
+                confirmLabel = "Discard",
+                onConfirm = {
+                    showNothingToSave = false
+                    RestTimer.clearAll(context)
+                    scope.launch { deleteWorkoutAndImages(dao, shown.id) }
+                },
+                onDismiss = { showNothingToSave = false },
+                dismissLabel = "Keep going"
             )
         }
 
