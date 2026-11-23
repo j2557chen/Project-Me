@@ -27,8 +27,8 @@ android {
         targetSdk = 37
         // versionCode goes up by one for every APK given out, or phones won't take it as an
         // update. versionName is what people see.
-        versionCode = 1
-        versionName = "0.1.0"
+        versionCode = 2
+        versionName = "0.2.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
